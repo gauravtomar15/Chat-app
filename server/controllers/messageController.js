@@ -15,24 +15,24 @@ export const getUserForSidebar = async (req,res)=>{
 
         const unSeenMessages = {}
         const promises = filterUsers.map(async (user)=>{
-            const messages = await Message.find({senderId : user._id , receiverId : userId,  seen : false})
+            const messages = await Message.find({senderId: user._id , receiverId: userId,  seen: false})
             if(messages.length > 0)
             {
-                unSeenMessages[user._id] = messages.length
+                unSeenMessages[user._id] = messages.length;
             }
 
         })
         await Promise.all(promises);
         res.json({
-            success : true ,
-            users: filterUsers ,
+            success: true ,
+            users: filterUsers,
             unSeenMessages
         })
     } catch (error) {
         console.log(error.message);
         res.json({
-            success : false,
-            message : error.message
+            success: false,
+            message: error.message
         })
         
     }
@@ -42,29 +42,29 @@ export const getUserForSidebar = async (req,res)=>{
 
 export const getMessages = async (req , res)=> {
     try {
-        const { id : selectedUserId} = req.params;
+        const { id: selectedUserId} = req.params;
         const myId = req.user._id;
 
-        const message = await Message.find({
-            $or :[
-                {senderId : myId ,
-                    receiverId : selectedUserId
+        const messages = await Message.find({
+            $or: [
+                {senderId: myId ,
+                    receiverId: selectedUserId
                 },
                 {
-                    senderId : selectedUserId,
-                    receiverId : myId
+                    senderId: selectedUserId,
+                    receiverId: myId
                 }
             ]
         })
 
-        await Message.updateMany({senderId : selectedUserId , receiverId : myId} , {seen : true});
-        res.json({success : true , message})
+        await Message.updateMany({senderId: selectedUserId , receiverId: myId}, {seen: true});
+        res.json({success: true, messages})
         
-    } catch (error) {
+    } catch(error) {
          console.log(error.message);
         res.json({
-            success : false,
-            message : error.message
+            success: false,
+            message: error.message
         })
     }
 }
@@ -75,10 +75,10 @@ export const markMessageSeen = async (req, res) => {
     try {
         const {id} = req.params;
         await Message.findByIdAndUpdate(id , {seen: true})
-        res.json({success : true})
+        res.json({success: true})
     } catch (error) {
         console.log(error.message)
-        res.json({success : false , message : error.message})
+        res.json({success: false , message: error.message})
     }
 }
 
@@ -86,7 +86,7 @@ export const markMessageSeen = async (req, res) => {
 
 export const  sendMessage = async (req,res)=>{
     try {
-        const{text,image} = req.body
+        const {text,image} = req.body
         const receiverId = req.params.id;
         const senderId = req.user._id;
 
@@ -99,16 +99,20 @@ export const  sendMessage = async (req,res)=>{
         const newMessage = await Message.create({
             senderId,
             receiverId,
-            text,image : imageUrl
+            text,
+            image: imageUrl
         })
         // emit the new message to receiver's socket
 
         const receiverSocketId = userSocketMap[receiverId];
         if (receiverSocketId){
             io.to(receiverSocketId).emit("newMessage" , newMessage)
+            console.log("Message emitted to receiver:", receiverId);
+        } else {
+            console.log("Receiver not online:", receiverId);
         }
 
-        res.json({success : true , newMessage});
+        res.json({success: true , newMessage});
 
 
     } catch (error) {

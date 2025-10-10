@@ -8,8 +8,8 @@ export const protectRoute = async (req , res , next)=>{
         const token = req.headers.token;
          if(!token){
             return res.json({
-                success : false ,
-                message : "User Not Found",
+                success: false ,
+                message: "User Not Found",
             });
         }
 
@@ -18,8 +18,8 @@ export const protectRoute = async (req , res , next)=>{
         const user = await User.findById(deCode.userId).select("-password");
         if(!user){
             return res.json({
-                success : false ,
-                message : "User Not Found",
+                success: false ,
+                message: "User Not Found",
             });
         }
          req.user = user;
@@ -28,7 +28,7 @@ export const protectRoute = async (req , res , next)=>{
         console.log(error.message);
         res.json({
             success: false ,
-            message : error.message
+            message: error.message
         });
     }
 }

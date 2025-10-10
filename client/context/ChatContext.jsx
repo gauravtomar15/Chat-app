@@ -51,14 +51,21 @@ export const ChatProvider = ({children})=>{
 
      const sendMessage = async (messagesData) =>{
         try {
+            if (!selectUser) {
+                toast.error("Please select a user to send message");
+                return;
+            }
+            
             const {data} = await axios.post (`/api/messages/send/${selectUser._id}` , messagesData)
             if(data.success){
                 setMessages((prevMessages = [])=>[...prevMessages , data.newMessage])
+                console.log("Message sent successfully:", data.newMessage);
             } else{
-                 toast.error(<error className="messages"></error> || "failed to send message")
+                 toast.error(data.message || "failed to send message")
             }
         } catch (error) {
-             toast.error(error.message)
+             console.error("Error sending message:", error);
+             toast.error(error.response?.data?.message || error.message || "Failed to send message")
         }
      }
 
@@ -67,10 +74,11 @@ export const ChatProvider = ({children})=>{
      const subscribeToMessages = async ()=>{
         if(!socket) return;
 
-        socket.on("newMessage" , (newMessage=>{
+        socket.on("newMessage" , (newMessage) => {
+            console.log("New message received:", newMessage);
             if(selectUser && newMessage.senderId === selectUser._id){
                 newMessage.seen = true ;
-                setMessages((prevMessages= [])=>[...prevMessages , newMessage]);
+                setMessages((prevMessages = [])=>[...prevMessages , newMessage]);
                 axios.put(`/api/messages/mark/${newMessage._id}`)
             }
             else{
@@ -81,7 +89,7 @@ export const ChatProvider = ({children})=>{
                      prevUnseenMessages[newMessage.senderId] + 1 : 1,
                 }));
             }
-        }))
+        })
      }
 
      // function  to unsuscribe from messages

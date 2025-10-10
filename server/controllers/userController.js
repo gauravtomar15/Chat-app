@@ -5,7 +5,7 @@ import cloudinary from "../lib/cloudinary.js";
 
 // signup a new user
 
-export const signup = async (req, res) => {
+export const signup = async (req, res)=> {
   const { fullName, email, password, bio } = req.body;
   try {
     if (!fullName || !email || !password || !bio) {
@@ -38,7 +38,7 @@ export const signup = async (req, res) => {
     console.log(error.message)
     res.json({
         success: false ,
-        message : error.message
+        message: error.message
     })
   }
 };
@@ -54,8 +54,8 @@ export const login = async (req , res )=> {
 
        if(!isPasswordCorrect){
         return res.json({
-            success : false,
-            message : " Invaild password"
+            success: false,
+            message: " Invaild password"
         })
        }
     const token = generateToken(userData._id);
@@ -80,80 +80,80 @@ export const login = async (req , res )=> {
 
 export const checkAuth = (req , res)=>{
   res.json({
-    success : true,
-    user : req.user
+    success: true,
+    user: req.user
   });
 }
 
 //controller to upadte profile details
 
-// export const updateProfile = async (req , res )=>{
-//   try {
-//     const {profilePic , bio , fullName} = req.body;
-
-//     const userId = req.user._id;
-
-//     let updatedUser;
-
-//     if(!profilePic){
-//       updatedUser = await User.findByIdAndUpdate(userId , { bio , fullName} , {new : true});
-//         }
-//       else{
-//         const upload = await cloudinary.uploader.upload(profilePic);
-
-//         updatedUser = await User.findByIdAndUpdate(userId , { profilePic : upload.secure_url , bio , fullName} ,{new : true})
-//       }  
-
-//       res.json({success: true , user : updatedUser})
-//   } catch (error) {
-//     console.log(error.message)
-//     res.json({success: false , message : error.message})
-//   }
-// }
-
-
-
-export const updateProfile = async (req, res) => {
+export const updateProfile = async (req , res )=>{
   try {
-    const { profilePic, bio, fullName } = req.body;
+    const {profilePic , bio , fullName} = req.body;
+
     const userId = req.user._id;
 
     let updatedUser;
 
-    if (profilePic) {
-      // Cloudinary upload with base64
-      try {
-        const uploadResponse = await cloudinary.uploader.upload(profilePic, {
-          folder: "profiles", // optional folder
-        });
+    if(!profilePic){
+      updatedUser = await User.findByIdAndUpdate(userId , { bio , fullName} , {new : true});
+        }
+      else{
+        const upload = await cloudinary.uploader.upload(profilePic);
 
-        updatedUser = await User.findByIdAndUpdate(
-          userId,
-          {
-            profilePic: uploadResponse.secure_url,
-            bio,
-            fullName,
-          },
-          { new: true }
-        );
-      } catch (err) {
-        console.log("Cloudinary upload error:", err.message);
-        return res
-          .status(500)
-          .json({ success: false, message: "Image upload failed" });
-      }
-    } else {
-      // If no image, update only name & bio
-      updatedUser = await User.findByIdAndUpdate(
-        userId,
-        { bio, fullName },
-        { new: true }
-      );
-    }
+        updatedUser = await User.findByIdAndUpdate(userId , { profilePic: upload.secure_url , bio , fullName} ,{new : true})
+      }  
 
-    return res.json({ success: true, user: updatedUser });
-  } catch (err) {
-    console.log("Profile update error:", err.message);
-    return res.status(500).json({ success: false, message: err.message });
+      res.json({success: true , user: updatedUser})
+  } catch (error) {
+    console.log(error.message)
+    res.json({success: false , message : error.message})
   }
-};
+}
+
+
+
+// export const updateProfile = async (req, res) => {
+//   try {
+//     const { profilePic, bio, fullName } = req.body;
+//     const userId = req.user._id;
+
+//     let updatedUser;
+
+//     if (!profilePic) {
+//       // Cloudinary upload with base64
+//       try {
+//         const uploadResponse = await cloudinary.uploader.upload(profilePic, {
+//           folder: "profiles", // optional folder
+//         });
+
+//         updatedUser = await User.findByIdAndUpdate(
+//           userId,
+//           {
+//             profilePic: uploadResponse.secure_url,
+//             bio,
+//             fullName,
+//           },
+//           { new: true }
+//         );
+//       } catch (err) {
+//         console.log("Cloudinary upload error:", err.message);
+//         return res
+//           .status(500)
+//           .json({ success: false, message: "Image upload failed" });
+//       }
+//     } else {
+//       // If no image, update only name & bio
+//       updatedUser = await User.findByIdAndUpdate(
+//         userId,
+//         { bio, fullName },
+//         { new: true }
+//       );
+//     }
+
+//     return res.json({ success: true, user: updatedUser });
+//   } catch (err) {
+//     console.log("Profile update error:", err.message);
+//     return res.status(500).json({ success: false, message: err.message });
+//   }
+// };

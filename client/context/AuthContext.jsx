@@ -3,7 +3,7 @@ import axios from 'axios'
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 axios.defaults.baseURL = backendUrl;
 
 export const AuthContext = createContext();
@@ -58,9 +58,12 @@ export const AuthProvider = ({ children }) => {
     setAuthUser(null);
     setOnlineUsers([]);
     axios.defaults.headers.common["token"] = null;
-    toast.success("Logged out successfully")
+    toast.success("Logged out successfully");
 
-    socket.disconnect();
+    if (socket) {
+      socket.disconnect();
+      setSocket(null);
+    }
   };
 
 // update profile
@@ -84,26 +87,38 @@ export const AuthProvider = ({ children }) => {
     if (!userData || socket?.connected) return;
 
     const newSocket = io(backendUrl, {
-      auth: { userId: userData._id },
-        transports: ["polling" , "websocket"],   
-        withCredentials: true,
+      query: { userId: userData._id },
+      transports: ['websocket', 'polling']
     });
 
     newSocket.connect();
     setSocket(newSocket);
 
+    newSocket.on("connect", () => {
+      console.log("Socket connected successfully");
+    });
+
+    newSocket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+      toast.error("Connection error. Please refresh the page.");
+    });
+
     newSocket.on("getOnlineUsers", (userIds) => {
       setOnlineUsers(userIds);
+    });
+
+    newSocket.on("disconnect", () => {
+      console.log("Socket disconnected");
     });
   };
 
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common["token"] = token;
-     checkAuth();
     }
+     checkAuth();
     
-  }, [token]);
+  }, []);
 
   const value = {
     axios,
