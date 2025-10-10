@@ -16,7 +16,12 @@ const server = http.createServer(app);
 // initialize socket.io server
 export const io = new Server( server , {
     cors:{
-         origin: ["http://localhost:5173", "http://localhost:3000"],
+         origin: [
+           "http://localhost:5173", 
+           "http://localhost:3000",
+           "https://your-frontend-app.vercel.app", // Replace with your actual Vercel URL
+           /\.vercel\.app$/, // Allow all Vercel preview URLs
+         ],
          methods: ["GET" , "POST", "PUT", "DELETE"],
          credentials: true },
 });
@@ -49,7 +54,12 @@ io.on("connection", (socket)=>{
 
 app.use(express.json({limit : "20mb"}));
 app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:3000"],
+    origin: [
+      "http://localhost:5173", 
+      "http://localhost:3000",
+      "https://your-frontend-app.vercel.app", // Replace with your actual Vercel URL
+      /\.vercel\.app$/ // Allow all Vercel preview URLs
+    ],
     credentials: true
 }));
 app.use(express.urlencoded({ extended: true, limit: "20mb" }));
@@ -64,11 +74,8 @@ app.use("/api/messages" , messageRouter)
 
 await connectDb();
 
-if(process.env.NODE_ENV !== "production"){
 const PORT = process.env.PORT || 5000;
 server.listen(PORT,()=> console.log("server running on port : " + PORT));
-
-}
 
 //export server for vercel
 
