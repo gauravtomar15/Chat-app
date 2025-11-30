@@ -79,12 +79,13 @@ app.use("/api/messages" , messageRouter)
 
 await connectDb();
 
-if(process.env.NODE_ENV !== "production"){
-  const PORT = process.env.PORT || 5000;
-server.listen(PORT,()=> console.log("server running on port : " + PORT));
-}
+// Always listen on the port (Railway and other platforms need this)
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`Server running on port: ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+});
 
-//export server for vercel
-
+//export server for vercel (if needed)
 export default server;
 
