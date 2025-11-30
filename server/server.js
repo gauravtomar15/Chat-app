@@ -19,7 +19,7 @@ export const io = new Server( server , {
          origin: [
            "http://localhost:5173", 
            "http://localhost:3000",
-           "https://your-frontend-app.vercel.app", // Replace with your actual Vercel URL
+           "https://chat-app-sepia-five-27.vercel.app", // Your actual Vercel frontend URL
            /\.vercel\.app$/, // Allow all Vercel preview URLs
          ],
          methods: ["GET" , "POST", "PUT", "DELETE"],
@@ -62,7 +62,7 @@ app.use(cors({
     origin: [
       "http://localhost:5173", 
       "http://localhost:3000",
-      "https://your-frontend-app.vercel.app", // Replace with your actual Vercel URL
+      "https://chat-app-sepia-five-27.vercel.app", // Your actual Vercel frontend URL
       /\.vercel\.app$/ // Allow all Vercel preview URLs
     ],
     credentials: true
