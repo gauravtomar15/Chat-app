@@ -124,7 +124,9 @@ export const AuthProvider = ({ children }) => {
     setSocket(newSocket);
 
     newSocket.on("connect", () => {
-      console.log("Socket connected successfully");
+      console.log("✅ Socket connected successfully");
+      // Clear error flag on successful connection
+      newSocket._hasShownError = false;
       // Only show toast in development
       if (import.meta.env.DEV) {
         toast.success("Connected to chat server");
@@ -147,14 +149,26 @@ export const AuthProvider = ({ children }) => {
         console.error("   2. Backend URL is incorrect:", socketUrl);
         console.error("   3. Backend server is not running");
         console.error("   4. CORS configuration issue");
-        toast.error("WebSocket connection failed. Check console for details.");
+        console.error("   5. Check VITE_BACKEND_URL in Vercel environment variables");
+        
+        // Only show toast once, not on every reconnect attempt
+        if (!newSocket._hasShownError) {
+          toast.error("Cannot connect to chat server. Real-time features disabled.", {
+            duration: 5000,
+            id: "socket-error" // Use ID to prevent duplicate toasts
+          });
+          newSocket._hasShownError = true;
+        }
       } else if (error.message && !error.message.includes("xhr poll error")) {
-        toast.error("Connection error. Trying to reconnect...");
+        // Don't show toast for every reconnect attempt
+        console.log("Connection error. Trying to reconnect...");
       }
     });
 
     newSocket.on("reconnect", (attemptNumber) => {
       console.log("Socket reconnected after", attemptNumber, "attempts");
+      // Clear error flag on successful reconnect
+      newSocket._hasShownError = false;
       // Only show toast in development
       if (import.meta.env.DEV) {
         toast.success("Reconnected to chat server");
@@ -204,9 +218,18 @@ export const AuthProvider = ({ children }) => {
       console.error("❌ Backend URL:", backendUrl);
       console.error("❌ Make sure:");
       console.error("   1. Backend is deployed to Railway/Render (NOT Vercel)");
-      console.error("   2. VITE_BACKEND_URL is set correctly in Vercel");
+      console.error("   2. VITE_BACKEND_URL is set correctly in Vercel environment variables");
       console.error("   3. Backend server is running");
-      toast.error("Cannot connect to backend server. Check console for details.");
+      console.error("   4. Visit your Vercel dashboard → Settings → Environment Variables");
+      console.error("   5. Add: VITE_BACKEND_URL = https://your-railway-app.railway.app");
+      
+      // Only show toast if backend URL is clearly wrong
+      if (backendUrl === "http://localhost:5000" || !backendUrl.includes('http')) {
+        toast.error("Backend URL not configured. Check console for setup instructions.", {
+          duration: 6000,
+          id: "backend-config-error"
+        });
+      }
       return false;
     }
   };
