@@ -23,7 +23,12 @@ export const io = new Server( server , {
            /\.vercel\.app$/, // Allow all Vercel preview URLs
          ],
          methods: ["GET" , "POST", "PUT", "DELETE"],
-         credentials: true },
+         credentials: true 
+    },
+    transports: ['websocket', 'polling'],
+    allowEIO3: true,
+    pingTimeout: 60000,
+    pingInterval: 25000
 });
 
 // store online users

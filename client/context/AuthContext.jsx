@@ -6,6 +6,11 @@ import { io } from "socket.io-client";
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 axios.defaults.baseURL = backendUrl;
 
+// Log backend URL in development to help with debugging
+if (import.meta.env.DEV) {
+  console.log("Backend URL:", backendUrl);
+}
+
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -84,31 +89,83 @@ export const AuthProvider = ({ children }) => {
 
   // connect socket
   const connectSocket = (userData) => {
-    if (!userData || socket?.connected) return;
+    if (!userData) return;
+    
+    // Disconnect existing socket if any
+    if (socket) {
+      socket.disconnect();
+      setSocket(null);
+    }
 
-    const newSocket = io(backendUrl, {
+    // Ensure backendUrl is properly formatted
+    const socketUrl = backendUrl.replace(/\/$/, ''); // Remove trailing slash
+    
+    const newSocket = io(socketUrl, {
       query: { userId: userData._id },
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+      timeout: 20000,
+      forceNew: true,
+      autoConnect: true
     });
 
-    newSocket.connect();
     setSocket(newSocket);
 
     newSocket.on("connect", () => {
       console.log("Socket connected successfully");
+      // Only show toast in development
+      if (import.meta.env.DEV) {
+        toast.success("Connected to chat server");
+      }
     });
 
     newSocket.on("connect_error", (error) => {
       console.error("Socket connection error:", error);
-      toast.error("Connection error. Please refresh the page.");
+      // Only show error toast if it's a critical error
+      if (error.message && !error.message.includes("xhr poll error")) {
+        toast.error("Connection error. Trying to reconnect...");
+      }
+    });
+
+    newSocket.on("reconnect", (attemptNumber) => {
+      console.log("Socket reconnected after", attemptNumber, "attempts");
+      // Only show toast in development
+      if (import.meta.env.DEV) {
+        toast.success("Reconnected to chat server");
+      }
+    });
+
+    newSocket.on("reconnect_attempt", (attemptNumber) => {
+      console.log("Reconnection attempt", attemptNumber);
+    });
+
+    newSocket.on("reconnect_error", (error) => {
+      console.error("Reconnection error:", error);
+    });
+
+    newSocket.on("reconnect_failed", () => {
+      console.error("Failed to reconnect after all attempts");
+      toast.error("Connection failed. Please refresh the page.");
     });
 
     newSocket.on("getOnlineUsers", (userIds) => {
       setOnlineUsers(userIds);
     });
 
-    newSocket.on("disconnect", () => {
-      console.log("Socket disconnected");
+    newSocket.on("disconnect", (reason) => {
+      console.log("Socket disconnected:", reason);
+      if (reason === "io server disconnect") {
+        // Server disconnected the socket, need to manually reconnect
+        newSocket.connect();
+      }
+    });
+
+    // Handle errors
+    newSocket.on("error", (error) => {
+      console.error("Socket error:", error);
     });
   };
 
@@ -116,8 +173,15 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       axios.defaults.headers.common["token"] = token;
     }
-     checkAuth();
+    checkAuth();
     
+    // Cleanup function to disconnect socket on unmount
+    return () => {
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
+      }
+    };
   }, []);
 
   const value = {
